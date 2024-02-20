@@ -31,10 +31,13 @@ class Downloader:
         self._name = self.status().name
         return self._name
 
-    async def download(self):
+    async def download(self, progress_callback=None):
         print(f'Start downloading {self.name}')
         while not self._status.is_seeding:
             s = self.status()
+
+            if progress_callback:
+                await progress_callback(s)
 
             print('\r%.2f%% complete (down: %.1f kB/s up: %.1f kB/s peers: %d) %s' % (
                 s.progress * 100, s.download_rate / 1000, s.upload_rate / 1000,

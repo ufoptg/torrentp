@@ -3,7 +3,7 @@ import time
 
 
 class Downloader:
-    def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet):
+    def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet, progress_callback=None, progress_threshold=8):
         self._session = session
         self._torrent_info = torrent_info
         self._save_path = save_path
@@ -14,6 +14,8 @@ class Downloader:
         self._lt = libtorrent
         self._add_torrent_params = None
         self._is_magnet = is_magnet
+        self._progress_callback = progress_callback
+        self._progress_threshold = progress_threshold
 
     def status(self):
         if not self._is_magnet:
@@ -31,13 +33,17 @@ class Downloader:
         self._name = self.status().name
         return self._name
 
-    async def download(self, progress_callback=None, event=None):
+    async def download(self):
         print(f'Start downloading {self.name}')
+        last_updated_percentage = 0
         while not self._status.is_seeding:
             s = self.status()
 
-            if progress_callback:
-                await progress_callback(s, event)
+            if self._progress_callback:
+                percentage = s.progress * 100
+                if percentage >= last_updated_percentage + self._progress_threshold:
+                    last_updated_percentage = percentage
+                    await self._progress_callback(s)
 
             print('\r%.2f%% complete (down: %.1f kB/s up: %.1f kB/s peers: %d) %s' % (
                 s.progress * 100, s.download_rate / 1000, s.upload_rate / 1000,

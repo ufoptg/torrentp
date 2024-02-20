@@ -34,7 +34,7 @@ class TorrentDownloader:
 
         self._file = self._downloader
         await event.edit(f"Starting download of {self._file_path}...")
-        await self._file.download(progress_callback=self.progress_callback)
+        await self._file.download(progress_callback=self.progress_callback, event=event)
 
     async def progress_callback(self, status, event):
         await event.edit(f"Progress: {status.progress * 100:.2f}%")

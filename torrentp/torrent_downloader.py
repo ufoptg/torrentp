@@ -5,9 +5,10 @@ import libtorrent as lt
 
 
 class TorrentDownloader:
-    def __init__(self, file_path, save_path):
+    def __init__(self, file_path, save_path, progress_callback=None):  # Making progress_callback optional
         self._file_path = file_path
         self._save_path = save_path
+        self._progress_callback = progress_callback
         self._downloader = None
         self._torrent_info = None
         self._lt = lt
@@ -20,12 +21,14 @@ class TorrentDownloader:
             self._add_torrent_params = self._lt.parse_magnet_uri(self._file_path)
             self._add_torrent_params.save_path = self._save_path
             self._downloader = Downloader(session=self._session(), torrent_info=self._add_torrent_params,
-                                          save_path=self._save_path, libtorrent=lt, is_magnet=True)
+                                          save_path=self._save_path, libtorrent=lt, is_magnet=True,
+                                          progress_callback=self._progress_callback)
 
         else:
             self._torrent_info = TorrentInfo(self._file_path, self._lt)
             self._downloader = Downloader(session=self._session(), torrent_info=self._torrent_info(),
-                                          save_path=self._save_path, libtorrent=None, is_magnet=False)
+                                          save_path=self._save_path, libtorrent=None, is_magnet=False,
+                                          progress_callback=self._progress_callback)
 
         self._session.set_download_limit(download_speed)
         self._session.set_upload_limit(upload_speed)
@@ -51,7 +54,5 @@ class TorrentDownloader:
     def __repr__(self):
         pass
 
-    def __call__(self):
-        pass
     def __call__(self):
         pass

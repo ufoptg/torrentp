@@ -2,7 +2,6 @@ import sys
 import time
 import asyncio
 import random
-from telethon import events
 
 class Downloader:
     def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet):
@@ -34,25 +33,26 @@ class Downloader:
         self._name = self.status().name
         return self._name
 
-    async def download(self, event):
-        await event.edit(f'Start downloading {self.name}')
+    async def download(self):
+        print(f'Start downloading {self.name}')
         initial_percentage = random.randint(3, 5)
         print_at = initial_percentage
-        await event.edit(f'{initial_percentage}% complete')
+        print('\r%.2f%% complete' % (initial_percentage), end=' ')
+        sys.stdout.flush()
         while not self._status.is_seeding:
             if not self._paused:
                 s = self.status()
                 current_progress = s.progress * 100
                 if current_progress >= print_at:
-                    await event.edit(
-                        f'{current_progress:.2f}% complete (down: {s.download_rate / 1000:.1f} kB/s '
-                        f'up: {s.upload_rate / 1000:.1f} kB/s peers: {s.num_peers}) {s.state}'
-                    )
+                    print('\r%.2f%% complete (down: %.1f kB/s up: %.1f kB/s peers: %d) %s' % (
+                        current_progress, s.download_rate / 1000, s.upload_rate / 1000,
+                        s.num_peers, s.state), end=' ')
+                    sys.stdout.flush()
                     interval = random.randint(5, 8)
                     print_at += interval
             await asyncio.sleep(2)
 
-        await event.edit(f'{self._status.name} downloaded successfully.')
+        print(self._status.name, 'downloaded successfully.')
 
     def pause(self):
         self._file.pause()
@@ -70,9 +70,6 @@ class Downloader:
         pass
 
     def __repr__(self):
-        pass
-
-    def __call__(self):
         pass
 
     def __call__(self):

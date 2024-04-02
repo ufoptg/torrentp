@@ -1,7 +1,6 @@
 import sys
 import time
 import asyncio
-import random
 
 class Downloader:
     def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet):
@@ -35,21 +34,13 @@ class Downloader:
 
     async def download(self):
         print(f'Start downloading {self.name}')
-        initial_percentage = random.randint(3, 5)
-        print_at = initial_percentage
-        print('\r%.2f%% complete' % (initial_percentage), end=' ')
-        sys.stdout.flush()
         while not self._status.is_seeding:
             if not self._paused:
                 s = self.status()
-                current_progress = s.progress * 100
-                if current_progress >= print_at:
-                    print('\r%.2f%% complete (down: %.1f kB/s up: %.1f kB/s peers: %d) %s' % (
-                        current_progress, s.download_rate / 1000, s.upload_rate / 1000,
-                        s.num_peers, s.state), end=' ')
-                    sys.stdout.flush()
-                    interval = random.randint(5, 8)
-                    print_at += interval
+                print('\r%.2f%% complete (down: %.1f kB/s up: %.1f kB/s peers: %d) %s' % (
+                    s.progress * 100, s.download_rate / 1000, s.upload_rate / 1000,
+                    s.num_peers, s.state), end=' ')
+                sys.stdout.flush()
             await asyncio.sleep(2)
 
         print(self._status.name, 'downloaded successfully.')

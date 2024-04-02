@@ -4,7 +4,7 @@ import asyncio
 import random
 
 class Downloader:
-    def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet, progress_callback=None):
+    def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet):
         self._session = session
         self._torrent_info = torrent_info
         self._save_path = save_path
@@ -16,7 +16,6 @@ class Downloader:
         self._add_torrent_params = None
         self._is_magnet = is_magnet
         self._paused = False
-        self._progress_callback = progress_callback
 
     def status(self):
         if not self._is_magnet:
@@ -51,8 +50,6 @@ class Downloader:
                     sys.stdout.flush()
                     interval = random.randint(5, 8)
                     print_at += interval
-                    if self._progress_callback:  # Check if callback is provided
-                        self._progress_callback(current_progress)
             await asyncio.sleep(2)
 
         print(self._status.name, 'downloaded successfully.')

@@ -3,7 +3,7 @@ import time
 import asyncio
 
 class Downloader:
-    def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet):
+    def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet, progress_callback=None):
         self._session = session
         self._torrent_info = torrent_info
         self._save_path = save_path
@@ -15,6 +15,7 @@ class Downloader:
         self._add_torrent_params = None
         self._is_magnet = is_magnet
         self._paused = False
+        self._progress_callback = progress_callback
 
     def status(self):
         if not self._is_magnet:
@@ -41,6 +42,8 @@ class Downloader:
                     s.progress * 100, s.download_rate / 1000, s.upload_rate / 1000,
                     s.num_peers, s.state), end=' ')
                 sys.stdout.flush()
+                if self._progress_callback:
+                    self._progress_callback(s.progress * 100, s.download_rate / 1000, s.upload_rate / 1000, s.num_peers, s.state)
             await asyncio.sleep(2)
 
         print(self._status.name, 'downloaded successfully.')

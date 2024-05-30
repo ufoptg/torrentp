@@ -15,8 +15,15 @@ class TelegramNotifier:
         except Exception as e:
             print("Error sending message to Telegram:", e)
 
+    async def edit_message(self, message, new_text):
+        try:
+            await message.edit(new_text)
+        except Exception as e:
+            print("Error editing message on Telegram:", e)
+
+
 class TorrentDownloader:
-    def __init__(self, file_path, save_path, telethon_client, port=6881):
+    def __init__(self, file_path, save_path, telethon_client, xx, port=6881):
         self._file_path = file_path
         self._save_path = save_path
         self._port = port  # Default port is 6881
@@ -27,6 +34,7 @@ class TorrentDownloader:
         self._add_torrent_params = None
         self._session = Session(self._lt, port=self._port)  # Pass port to Session
         self._telegram_notifier = TelegramNotifier(telethon_client)  # Create TelegramNotifier
+        self.xx = xx
 
     async def start_download(self, download_speed=0, upload_speed=0, chat_id=None):
         if chat_id is None:
@@ -70,8 +78,8 @@ class TorrentDownloader:
         # Print to stdout
         print(message, end='')
 
-        # Send message to Telegram
-        await self._telegram_notifier.send_message(chat_id, message)
+        # Edit the existing message on Telegram
+        await self._telegram_notifier.edit_message(self.xx, message)
 
     def pause_download(self):
         if self._downloader:

@@ -6,17 +6,24 @@ import math
 
 
 class TelegramNotifier:
-    def __init__(self, telethon_client):
+    def __init__(self, telethon_client, event=None):
         self.client = telethon_client
+        self.event = event
 
     async def send_message(self, chat_id, message):
-        try:
-            await self.client.edit(message)
-        except Exception as e:
-            print("Error sending message to Telegram:", e)
+        if self.event is not None:
+            try:
+                await self.event.edit(message)
+            except Exception as e:
+                print("Error sending message to Telegram:", e)
+        else:
+            try:
+                await self.client.send_message(chat_id, message)
+            except Exception as e:
+                print("Error sending message to Telegram:", e)
 
 class TorrentDownloader:
-    def __init__(self, file_path, save_path, telethon_client, port=6881):
+    def __init__(self, file_path, save_path, telethon_client, event=None, port=6881):
         self._file_path = file_path
         self._save_path = save_path
         self._port = port  # Default port is 6881
@@ -26,7 +33,7 @@ class TorrentDownloader:
         self._file = None
         self._add_torrent_params = None
         self._session = Session(self._lt, port=self._port)  # Pass port to Session
-        self._telegram_notifier = TelegramNotifier(telethon_client)  # Create TelegramNotifier
+        self._telegram_notifier = TelegramNotifier(telethon_client, event)
 
     async def start_download(self, download_speed=0, upload_speed=0, chat_id=None):
         if chat_id is None:

@@ -3,8 +3,9 @@ import asyncio
 import math
 import time
 
+
 class Downloader:
-    def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet):
+    def __init__(self, session, torrent_info, save_path, libtorrent, is_magnet, progress_callback, telegram_notifier):
         self._session = session
         self._torrent_info = torrent_info
         self._save_path = save_path
@@ -15,6 +16,8 @@ class Downloader:
         self._lt = libtorrent
         self._add_torrent_params = None
         self._is_magnet = is_magnet
+        self._progress_callback = progress_callback
+        self._telegram_notifier = telegram_notifier
         self._paused = False
 
     def status(self):
@@ -40,21 +43,11 @@ class Downloader:
 
         while not self._status.is_seeding:
             if not self._paused:
-                self._get_status_progress(self.status())
+                await self._progress_callback(self.status())
                 sys.stdout.flush()
 
             await asyncio.sleep(1)
         print('\033[92m' +  "\nDownloaded successfully." + '\033[0m')
-
-    def _get_status_progress(self, s):
-        _percentage = s.progress * 100
-        _download_speed = s.download_rate / 1000
-        _upload_speed = s.upload_rate / 1000
-
-        counting = math.ceil(_percentage / 5)
-        visual_loading = '#' * counting + ' ' * (20 - counting)
-        _message = "\r\033[42m %.1f Kb/s \033[0m|\033[46m up: %.1f Kb/s \033[0m| status: %s | peers: %d  \033[96m|%s|\033[0m %d%%" % (_download_speed, _upload_speed, s.state, s.num_peers, visual_loading, _percentage)
-        print(_message, end='')
 
     def get_size_info(self, byte_length):
         if not self._is_magnet:
@@ -107,3 +100,4 @@ class Downloader:
 
     def __call__(self):
         pass
+

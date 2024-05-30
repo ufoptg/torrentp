@@ -15,14 +15,15 @@ class TelegramNotifier:
         except Exception as e:
             print("Error sending message to Telegram:", e)
 
-    async def edit_message(self, message):
+    async def edit_message(self, message, new_text):
         try:
-            await self.client.edit(message)
+            await message.edit(new_text)
         except Exception as e:
-            print("Error sending message to Telegram:", e)
+            print("Error editing message on Telegram:", e)
+
 
 class TorrentDownloader:
-    def __init__(self, file_path, save_path, telethon_client, port=6881):
+    def __init__(self, file_path, save_path, telethon_client, xx, port=6881):
         self._file_path = file_path
         self._save_path = save_path
         self._port = port  # Default port is 6881
@@ -33,8 +34,9 @@ class TorrentDownloader:
         self._add_torrent_params = None
         self._session = Session(self._lt, port=self._port)  # Pass port to Session
         self._telegram_notifier = TelegramNotifier(telethon_client)  # Create TelegramNotifier
+        self.xx = xx
 
-    async def start_download(self, download_speed=0, upload_speed=0, chat_id=None, event=None):
+    async def start_download(self, download_speed=0, upload_speed=0, chat_id=None):
         if chat_id is None:
             raise ValueError("Chat ID must be provided.")
 
@@ -44,7 +46,7 @@ class TorrentDownloader:
             self._downloader = Downloader(
                 session=self._session(), torrent_info=self._add_torrent_params, 
                 save_path=self._save_path, libtorrent=lt, is_magnet=True,
-                progress_callback=lambda status: self._progress_callback(status, chat_id, event=None),
+                progress_callback=lambda status: self._progress_callback(status, chat_id),
                 telegram_notifier=self._telegram_notifier
             )
 
@@ -53,7 +55,7 @@ class TorrentDownloader:
             self._downloader = Downloader(
                 session=self._session(), torrent_info=self._torrent_info(), 
                 save_path=self._save_path, libtorrent=None, is_magnet=False,
-                progress_callback=lambda status: self._progress_callback(status, chat_id, event=None),
+                progress_callback=lambda status: self._progress_callback(status, chat_id),
                 telegram_notifier=self._telegram_notifier
             )
 
@@ -63,7 +65,7 @@ class TorrentDownloader:
         self._file = self._downloader
         await self._file.download()
 
-    async def _progress_callback(self, status, chat_id, event=None):
+    async def _progress_callback(self, status, chat_id):
         _percentage = status.progress * 100
         _download_speed = status.download_rate / 1000
         _upload_speed = status.upload_rate / 1000
@@ -76,10 +78,8 @@ class TorrentDownloader:
         # Print to stdout
         print(message, end='')
 
-        if event:
-            await event.edit(message)
-        else:
-            await self._telegram_notifier.edit_message(message)
+        # Edit the existing message on Telegram
+        await self._telegram_notifier.edit_message(self.xx, message)
 
     def pause_download(self):
         if self._downloader:

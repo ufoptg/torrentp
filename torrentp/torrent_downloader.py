@@ -2,6 +2,7 @@ from .session import Session
 from .torrent_info import TorrentInfo
 from .downloader import Downloader
 import libtorrent as lt
+import math
 
 
 class TelegramNotifier:

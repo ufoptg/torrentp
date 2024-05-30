@@ -11,7 +11,7 @@ class TelegramNotifier:
 
     async def send_message(self, chat_id, message):
         try:
-            await self.client.send_message(chat_id, message)
+            await self.client.edit(message)
         except Exception as e:
             print("Error sending message to Telegram:", e)
 
@@ -71,7 +71,7 @@ class TorrentDownloader:
         print(message, end='')
 
         # Send message to Telegram
-        await self._telegram_notifier.send_message(chat_id, message)
+        await self._telegram_notifier.send_message(message)
 
     def pause_download(self):
         if self._downloader:

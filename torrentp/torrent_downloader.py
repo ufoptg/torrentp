@@ -63,6 +63,9 @@ class TorrentDownloader:
         self._session.set_upload_limit(upload_speed)
 
         self._file = self._downloader
+
+        self.xx = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
+        
         await self._file.download()
 
     async def _progress_callback(self, status, chat_id):

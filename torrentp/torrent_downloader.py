@@ -98,7 +98,7 @@ class TorrentDownloader:
 
         # Edit the Telegram message with the progress
         try:
-            message_id = self._message.id if not isinstance(self._message, InputBotInlineMessageID) else self._message.id
+            message_id = extract_and_validate_message_id(self._message.id if not isinstance(self._message, InputBotInlineMessageID) else self._message.id)
             await self._telegram_notifier.edit_message(self._message.to_id, message_id, message)
         except Exception as e:
             print(f"Error editing message: {e}")

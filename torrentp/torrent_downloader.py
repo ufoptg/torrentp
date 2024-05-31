@@ -44,9 +44,9 @@ class TorrentDownloader:
         self._file = None
         self._add_torrent_params = None
         self._session = Session(self._lt, port=self._port)  # Pass port to Session
+        self._message_ids = {}  # Dictionary to store message IDs
         self._telegram_notifier = TelegramNotifier(telethon_client, self._message_ids)  # Pass message_ids
         self._message = event
-        self._message_ids = {}  # Dictionary to store message IDs
 
     async def start_download(self, chat_id, download_speed=0, upload_speed=0):
         if chat_id is None:

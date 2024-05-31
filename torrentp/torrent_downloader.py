@@ -3,6 +3,13 @@ from .torrent_info import TorrentInfo
 from .downloader import Downloader
 import libtorrent as lt
 import math
+from telethon.tl.types import InputBotInlineMessageID
+
+
+def extract_message_id(message):
+    if isinstance(message, InputBotInlineMessageID):
+        return message.id
+    return message
 
 class TelegramNotifier:
     def __init__(self, telethon_client):
@@ -38,7 +45,8 @@ class TorrentDownloader:
         if self._message is None:
             self._message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
         else:
-            await self._telegram_notifier.edit_message(chat_id, self._message.original_update.msg_id, "Getting data from magnet...")
+            message_id = extract_message_id(self._message.original_update.msg_id)
+            await self._telegram_notifier.edit_message(chat_id, message_id, "Getting data from magnet...")
 
         if not self._message:
             print("Failed to send initial message to Telegram")

@@ -17,7 +17,7 @@ class TelegramNotifier:
         return edited_message
 
 class TorrentDownloader:
-    def __init__(self, file_path, save_path, telethon_client, port=6881):
+    def __init__(self, file_path, save_path, telethon_client, event, port=6881):
         self._file_path = file_path
         self._save_path = save_path
         self._port = port  # Default port is 6881

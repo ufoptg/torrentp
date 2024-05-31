@@ -1,3 +1,4 @@
+import asyncio
 from .session import Session
 from .torrent_info import TorrentInfo
 from .downloader import Downloader
@@ -70,6 +71,7 @@ class TorrentDownloader:
         self._file = self._downloader
         await self._file.download()
 
+        await asyncio.sleep(5)
         await self._telegram_notifier.delete_message(chat_id, self._message.id)
 
     async def _progress_callback(self, status):

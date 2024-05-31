@@ -10,17 +10,12 @@ class TelegramNotifier:
         self.client = telethon_client
 
     async def send_message(self, chat_id, message):
-        try:
-            return await self.client.send_message(chat_id, message)
-        except Exception as e:
-            print("Error sending message to Telegram:", e)
-            return None
+        sent_message = await self.client.send_message(chat_id, message)
+        return sent_message
 
-    async def edit_message(self, message, new_text):
-        try:
-            await message.edit(new_text)
-        except Exception as e:
-            print("Error editing message on Telegram:", e)
+    async def edit_message(self, chat_id, message_id, new_message):
+        edited_message = await self.client.edit_message(chat_id, message_id, new_message)
+        return edited_message
 
 class TorrentDownloader:
     def __init__(self, file_path, save_path, telethon_client, port=6881):
@@ -76,14 +71,14 @@ class TorrentDownloader:
 
         counting = math.ceil(_percentage / 5)
         visual_loading = '#' * counting + ' ' * (20 - counting)
-        message = "\r\033[42m %.1f Kb/s \033[0m|\033[46m up: %.1f Kb/s \033[0m| status: %s | peers: %d  \033[96m|%s|\033[0m %d%%" % (
+        message = "Download speed: %.1f Kb/s | Upload speed: %.1f Kb/s | Status: %s | Peers: %d | Progress: %s | %d%%" % (
             _download_speed, _upload_speed, status.state, status.num_peers, visual_loading, _percentage)
 
-        # Print to stdout
-        print(message, end='')
-
-        # Edit the existing message on Telegram
-        await self._telegram_notifier.edit_message(self._message, message)
+        # Edit the Telegram message with the progress
+        try:
+            await self._message.edit(message)
+        except Exception as e:
+            print(f"Error editing message: {e}")
 
     def pause_download(self):
         if self._downloader:
@@ -101,7 +96,4 @@ class TorrentDownloader:
         pass
 
     def __repr__(self):
-        pass
-
-    def __call__(self):
         pass

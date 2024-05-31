@@ -5,7 +5,6 @@ import libtorrent as lt
 import math
 from telethon.tl.types import InputBotInlineMessageID
 
-
 def extract_and_validate_message_id(message):
     if isinstance(message, InputBotInlineMessageID):
         message_id = message.id
@@ -18,20 +17,21 @@ def extract_and_validate_message_id(message):
     
     return message_id
 
-
 class TelegramNotifier:
-    def __init__(self, telethon_client):
+    def __init__(self, telethon_client, message_ids):
         self.client = telethon_client
+        self._message_ids = message_ids  # Pass message_ids to the notifier
 
     async def send_message(self, chat_id, message):
         sent_message = await self.client.send_message(chat_id, message)
         return sent_message
 
-    async def edit_message(self, chat_id, message, new_message):
-        message_id = extract_and_validate_message_id(message)
-        edited_message = await self.client.edit_message(chat_id, message_id, new_message)
-        return edited_message
-
+    async def edit_message(self, chat_id, new_message):
+        if chat_id in self._message_ids:
+            message_id = self._message_ids[chat_id]
+            await self.client.edit_message(chat_id, message_id, new_message)
+        else:
+            print("No message ID found for the specified chat ID.")
 
 class TorrentDownloader:
     def __init__(self, file_path, save_path, telethon_client, event, port=6881):
@@ -44,24 +44,25 @@ class TorrentDownloader:
         self._file = None
         self._add_torrent_params = None
         self._session = Session(self._lt, port=self._port)  # Pass port to Session
-        self._telegram_notifier = TelegramNotifier(telethon_client)  # Create TelegramNotifier
+        self._telegram_notifier = TelegramNotifier(telethon_client, self._message_ids)  # Pass message_ids
         self._message = event
+        self._message_ids = {}  # Dictionary to store message IDs
 
     async def start_download(self, chat_id, download_speed=0, upload_speed=0):
         if chat_id is None:
             raise ValueError("Chat ID must be provided.")
 
-        # If self._message is None, send a new message. Otherwise, edit the existing message.
-        if self._message is None:
-            self._message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
+        # Send a new message
+        if self._file_path.startswith('magnet:'):
+            message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
         else:
-            message_id = self._message.id if not isinstance(self._message, InputBotInlineMessageID) else self._message.id
-            await self._telegram_notifier.edit_message(chat_id, message_id, "Getting data from magnet...")
+            message = await self._telegram_notifier.send_message(chat_id, "Starting download...")
 
-        if not self._message:
-            print("Failed to send initial message to Telegram")
-            return
+        if message:
+            self._message_ids[chat_id] = message.id  # Store the message ID
+            await self._telegram_notifier.edit_message(chat_id, message.id, "Getting data from magnet...")
 
+        # Start download
         if self._file_path.startswith('magnet:'):
             self._add_torrent_params = self._lt.parse_magnet_uri(self._file_path)
             self._add_torrent_params.save_path = self._save_path
@@ -102,7 +103,6 @@ class TorrentDownloader:
             await self._telegram_notifier.edit_message(self._message.to_id, message_id, message)
         except Exception as e:
             print(f"Error editing message: {e}")
-
 
     def pause_download(self):
         if self._downloader:

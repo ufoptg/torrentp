@@ -38,7 +38,7 @@ class TorrentDownloader:
         if self._message is None:
             self._message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
         else:
-            await self._telegram_notifier.edit_message(chat_id, self._message.id, "Getting data from magnet...")
+            await self._telegram_notifier.edit_message(chat_id, self._message.original_update.id, "Getting data from magnet...")
 
         if not self._message:
             print("Failed to send initial message to Telegram")

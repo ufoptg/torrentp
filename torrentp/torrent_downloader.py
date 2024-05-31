@@ -55,7 +55,7 @@ class TorrentDownloader:
         if self._message is None:
             self._message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
         else:
-            message_id = self._message.original_update.msg_id 
+            message_id = self._message.id if not isinstance(self._message, InputBotInlineMessageID) else self._message.id
             await self._telegram_notifier.edit_message(chat_id, message_id, "Getting data from magnet...")
 
         if not self._message:
@@ -98,7 +98,7 @@ class TorrentDownloader:
 
         # Edit the Telegram message with the progress
         try:
-            message_id = self._message.original_update.msg_id
+            message_id = self._message.id if not isinstance(self._message, InputBotInlineMessageID) else self._message.id
             await self._telegram_notifier.edit_message(self._message.to_id, message_id, message)
         except Exception as e:
             print(f"Error editing message: {e}")

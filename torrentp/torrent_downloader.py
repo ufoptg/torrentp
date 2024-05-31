@@ -17,7 +17,7 @@ class TelegramNotifier:
         return edited_message
 
 class TorrentDownloader:
-    def __init__(self, file_path, save_path, telethon_client, port=6881):
+    def __init__(self, file_path, save_path, telethon_client, event, port=6881):
         self._file_path = file_path
         self._save_path = save_path
         self._port = port  # Default port is 6881
@@ -28,7 +28,7 @@ class TorrentDownloader:
         self._add_torrent_params = None
         self._session = Session(self._lt, port=self._port)  # Pass port to Session
         self._telegram_notifier = TelegramNotifier(telethon_client)  # Create TelegramNotifier
-        self._message = None
+        self._message = event
 
     async def start_download(self, chat_id, download_speed=0, upload_speed=0):
         if chat_id is None:

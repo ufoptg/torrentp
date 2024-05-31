@@ -60,7 +60,7 @@ class TorrentDownloader:
 
         if message:
             self._message_ids[chat_id] = message.id  # Store the message ID
-            await self._telegram_notifier.edit_message(chat_id, message.id, "Getting data from magnet...")
+            await self._telegram_notifier.edit_message(chat_id, "Getting data from magnet...")
 
         # Start download
         if self._file_path.startswith('magnet:'):

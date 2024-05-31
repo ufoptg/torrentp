@@ -16,6 +16,9 @@ class TelegramNotifier:
         edited_message = await self.client.edit_message(chat_id, message_id, new_message)
         return edited_message
 
+    async def delete_message(self, chat_id, message_id):
+        await self.client.delete_messages(chat_id, [message_id])
+
 class TorrentDownloader:
     def __init__(self, file_path, save_path, telethon_client, event, port=6881):
         self._file_path = file_path
@@ -34,7 +37,6 @@ class TorrentDownloader:
         if chat_id is None:
             raise ValueError("Chat ID must be provided.")
 
-        # If self._message is None, send a new message. Otherwise, edit the existing message.
         if self._message is None:
             self._message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
         else:
@@ -68,6 +70,8 @@ class TorrentDownloader:
         self._file = self._downloader
         await self._file.download()
 
+        await self._telegram_notifier.delete_message(chat_id, self._message.id)
+
     async def _progress_callback(self, status):
         _percentage = status.progress * 100
         _download_speed = status.download_rate / 1000
@@ -78,11 +82,11 @@ class TorrentDownloader:
         message = "Download speed: %.1f Kb/s | Upload speed: %.1f Kb/s | Status: %s | Peers: %d | Progress: %s | %d%%" % (
             _download_speed, _upload_speed, status.state, status.num_peers, visual_loading, _percentage)
 
-        # Edit the Telegram message with the progress
         try:
             await self._message.edit(message)
         except Exception as e:
             print(f"Error editing message: {e}")
+
 
     def pause_download(self):
         if self._downloader:

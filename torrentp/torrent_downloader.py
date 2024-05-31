@@ -3,38 +3,22 @@ from .torrent_info import TorrentInfo
 from .downloader import Downloader
 import libtorrent as lt
 import math
-from telethon.tl.types import InputBotInlineMessageID
 
-def extract_and_validate_message_id(message):
-    if isinstance(message, InputBotInlineMessageID):
-        message_id = message.id
-    else:
-        message_id = message
-
-    # Ensure the message_id is within the valid range
-    if not (-2147483648 <= message_id <= 2147483647):
-        raise ValueError(f"Message ID {message_id} is out of valid range.")
-    
-    return message_id
 
 class TelegramNotifier:
-    def __init__(self, telethon_client, message_ids):
+    def __init__(self, telethon_client):
         self.client = telethon_client
-        self._message_ids = message_ids  # Pass message_ids to the notifier
 
     async def send_message(self, chat_id, message):
         sent_message = await self.client.send_message(chat_id, message)
         return sent_message
 
-    async def edit_message(self, chat_id, new_message):
-        if chat_id in self._message_ids:
-            message_id = self._message_ids[chat_id]
-            await self.client.edit_message(chat_id, message_id, new_message)
-        else:
-            print("No message ID found for the specified chat ID.")
+    async def edit_message(self, chat_id, message_id, new_message):
+        edited_message = await self.client.edit_message(chat_id, message_id, new_message)
+        return edited_message
 
 class TorrentDownloader:
-    def __init__(self, file_path, save_path, telethon_client, event, port=6881):
+    def __init__(self, file_path, save_path, telethon_client, port=6881):
         self._file_path = file_path
         self._save_path = save_path
         self._port = port  # Default port is 6881
@@ -44,30 +28,23 @@ class TorrentDownloader:
         self._file = None
         self._add_torrent_params = None
         self._session = Session(self._lt, port=self._port)  # Pass port to Session
-        self._message_ids = {}  # Dictionary to store message IDs
-        self._telegram_notifier = TelegramNotifier(telethon_client, self._message_ids)  # Pass message_ids
-        self._message = event
+        self._telegram_notifier = TelegramNotifier(telethon_client)  # Create TelegramNotifier
+        self._message = None
 
     async def start_download(self, chat_id, download_speed=0, upload_speed=0):
         if chat_id is None:
             raise ValueError("Chat ID must be provided.")
 
-        # Send a new message
-        if self._file_path.startswith('magnet:'):
-            message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
-        else:
-            message = await self._telegram_notifier.send_message(chat_id, "Starting download...")
+        self._message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
+        if not self._message:
+            print("Failed to send initial message to Telegram")
+            return
 
-        if message:
-            self._message_ids[chat_id] = message.id  # Store the message ID
-            await self._telegram_notifier.edit_message(chat_id, "Getting data from magnet...")
-
-        # Start download
         if self._file_path.startswith('magnet:'):
             self._add_torrent_params = self._lt.parse_magnet_uri(self._file_path)
             self._add_torrent_params.save_path = self._save_path
             self._downloader = Downloader(
-                session=self._session, torrent_info=self._add_torrent_params, 
+                session=self._session(), torrent_info=self._add_torrent_params, 
                 save_path=self._save_path, libtorrent=lt, is_magnet=True,
                 progress_callback=self._progress_callback,
                 telegram_notifier=self._telegram_notifier
@@ -75,8 +52,8 @@ class TorrentDownloader:
         else:
             self._torrent_info = TorrentInfo(self._file_path, self._lt)
             self._downloader = Downloader(
-                session=self._session, torrent_info=self._torrent_info, 
-                save_path=self._save_path, libtorrent=lt, is_magnet=False,
+                session=self._session(), torrent_info=self._torrent_info(), 
+                save_path=self._save_path, libtorrent=None, is_magnet=False,
                 progress_callback=self._progress_callback,
                 telegram_notifier=self._telegram_notifier
             )
@@ -99,8 +76,7 @@ class TorrentDownloader:
 
         # Edit the Telegram message with the progress
         try:
-            message_id = extract_and_validate_message_id(self._message.id if not isinstance(self._message, InputBotInlineMessageID) else self._message.id)
-            await self._telegram_notifier.edit_message(self._message.to_id, message_id, message)
+            await self._message.edit(message)
         except Exception as e:
             print(f"Error editing message: {e}")
 

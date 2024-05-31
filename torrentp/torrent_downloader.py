@@ -4,7 +4,6 @@ from .downloader import Downloader
 import libtorrent as lt
 import math
 
-
 class TelegramNotifier:
     def __init__(self, telethon_client):
         self.client = telethon_client
@@ -35,7 +34,12 @@ class TorrentDownloader:
         if chat_id is None:
             raise ValueError("Chat ID must be provided.")
 
-        self._message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
+        # If self._message is None, send a new message. Otherwise, edit the existing message.
+        if self._message is None:
+            self._message = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
+        else:
+            await self._telegram_notifier.edit_message(chat_id, self._message.id, "Getting data from magnet...")
+
         if not self._message:
             print("Failed to send initial message to Telegram")
             return

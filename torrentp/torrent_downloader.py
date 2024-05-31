@@ -23,7 +23,7 @@ class TelegramNotifier:
 
 
 class TorrentDownloader:
-    def __init__(self, file_path, save_path, telethon_client, xx, port=6881):
+    def __init__(self, file_path, save_path, telethon_client, port=6881):
         self._file_path = file_path
         self._save_path = save_path
         self._port = port  # Default port is 6881
@@ -34,11 +34,13 @@ class TorrentDownloader:
         self._add_torrent_params = None
         self._session = Session(self._lt, port=self._port)  # Pass port to Session
         self._telegram_notifier = TelegramNotifier(telethon_client)  # Create TelegramNotifier
-        self.xx = xx
+        self.xx = None
 
     async def start_download(self, download_speed=0, upload_speed=0, chat_id=None):
         if chat_id is None:
             raise ValueError("Chat ID must be provided.")
+
+        self.xx = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
 
         if self._file_path.startswith('magnet:'):
             self._add_torrent_params = self._lt.parse_magnet_uri(self._file_path)
@@ -46,16 +48,15 @@ class TorrentDownloader:
             self._downloader = Downloader(
                 session=self._session(), torrent_info=self._add_torrent_params, 
                 save_path=self._save_path, libtorrent=lt, is_magnet=True,
-                progress_callback=lambda status: self._progress_callback(status, chat_id),
+                progress_callback=lambda status: self._progress_callback(status),
                 telegram_notifier=self._telegram_notifier
             )
-
         else:
             self._torrent_info = TorrentInfo(self._file_path, self._lt)
             self._downloader = Downloader(
                 session=self._session(), torrent_info=self._torrent_info(), 
                 save_path=self._save_path, libtorrent=None, is_magnet=False,
-                progress_callback=lambda status: self._progress_callback(status, chat_id),
+                progress_callback=lambda status: self._progress_callback(status),
                 telegram_notifier=self._telegram_notifier
             )
 
@@ -63,12 +64,9 @@ class TorrentDownloader:
         self._session.set_upload_limit(upload_speed)
 
         self._file = self._downloader
-
-        self.xx = await self._telegram_notifier.send_message(chat_id, "Getting data from magnet...")
-        
         await self._file.download()
 
-    async def _progress_callback(self, status, chat_id):
+    async def _progress_callback(self, status):
         _percentage = status.progress * 100
         _download_speed = status.download_rate / 1000
         _upload_speed = status.upload_rate / 1000
